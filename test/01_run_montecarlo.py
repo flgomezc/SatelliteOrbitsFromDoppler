@@ -30,6 +30,15 @@ import emcee
 import corner
 import timeit
 
+#### Run in parallel ##############
+import os
+os.environ["OMP_NUM_THREADS"] = "1"
+from multiprocessing import Pool
+from multiprocessing import cpu_count
+
+ncpu = cpu_count()
+print("{} CPUs".format(ncpu))
+#################################33
 
 R_earth = 6378.1    # km
 v_c     = 300000    # km/s
@@ -241,13 +250,16 @@ for i in range(nwalkers):
 ### Run EMCEE Monte-Carlo
 import numpy
 clock = timeit.time.time()
-toc = timeit.default_timer()
 
-sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood)
-pos, prob, state = sampler.run_mcmc(p0, MCMC_steps)
+with Pool(4) as pool:
+    
+    sampler = emcee.EnsembleSampler(nwalkers, ndim, log_likelihood, threads=ncpu)
+    toc = timeit.default_timer()
 
-tic = timeit.default_timer()
-print("Time elapsed: ", tic -toc, "seconds")
+    sampler.run_mcmc(p0, MCMC_steps)
+
+    tic = timeit.default_timer()
+    print("Time elapsed: ", tic -toc, "seconds")
 
 
 ### Store data.
